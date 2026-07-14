@@ -1,14 +1,18 @@
-#include <stdint.h>
-
-volatile uint16_t* const VGA = (uint16_t*)0xB8000;
+#include "../drivers/tty.h"
 
 void kernel_main(void)
 {
-    const char* str = "Citadel OS";
+    tty_init();
 
-    for (int i = 0; str[i]; ++i)
-        VGA[i] = 0x0F00 | str[i];
+    tty_write_line("========================================");
+    tty_write_line("         Citadel Operating System");
+    tty_write_line("========================================");
+    tty_write_line("");
+    tty_write_line("Kernel initialized successfully.");
+    tty_write_line("");
 
     while (1)
-        __asm__ volatile ("hlt");
+    {
+        __asm__ volatile("hlt");
+    }
 }
