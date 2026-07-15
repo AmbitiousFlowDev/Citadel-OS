@@ -5,14 +5,29 @@ project(CitadelOS LANGUAGES C ASM_NASM)
 enable_language(ASM_NASM)
 
 set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+file(GLOB SRC_C CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/src/*.c"
+)
+
+file(GLOB SRC_ASM CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/src/*.asm"
+)
 
 add_executable(kernel.elf
-    src/kernel.c
-    src/boot.asm
+    ${SRC_C}
+    ${SRC_ASM}
+)
+
+target_include_directories(kernel.elf PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 target_compile_options(kernel.elf PRIVATE
+
     $<$<COMPILE_LANGUAGE:C>:
+        -std=c23
         -ffreestanding
         -fno-stack-protector
         -fno-pic
@@ -21,6 +36,11 @@ target_compile_options(kernel.elf PRIVATE
         -mcmodel=kernel
         -Wall
         -Wextra
+        -Wpedantic
+    >
+
+    $<$<COMPILE_LANGUAGE:ASM_NASM>:
+        -f elf64
     >
 )
 
@@ -32,56 +52,45 @@ target_link_options(kernel.elf PRIVATE
 
 set_target_properties(kernel.elf PROPERTIES
     OUTPUT_NAME kernel
-    SUFFIX .elf
+    SUFFIX ".elf"
 )
 
-# -------------------------------------------------
-# ISO directories
-# -------------------------------------------------
-
 set(ISO_DIR ${CMAKE_BINARY_DIR}/iso)
-
-# -------------------------------------------------
-# Build ISO
-# -------------------------------------------------
 
 add_custom_target(iso ALL
 
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${ISO_DIR}
 
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            ${ISO_DIR}/boot
-
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            ${ISO_DIR}/EFI/BOOT
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${ISO_DIR}/boot
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${ISO_DIR}/EFI/BOOT
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:kernel.elf>
-            ${ISO_DIR}/boot/kernel.elf
+        $<TARGET_FILE:kernel.elf>
+        ${ISO_DIR}/boot/kernel.elf
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine.conf
-            ${ISO_DIR}/boot/
+        ${CMAKE_SOURCE_DIR}/limine.conf
+        ${ISO_DIR}/boot/
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine/limine-bios.sys
-            ${ISO_DIR}/boot/
+        ${CMAKE_SOURCE_DIR}/limine/limine-bios.sys
+        ${ISO_DIR}/boot/
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine/BOOTX64.EFI
-            ${ISO_DIR}/EFI/BOOT/
+        ${CMAKE_SOURCE_DIR}/limine/BOOTX64.EFI
+        ${ISO_DIR}/EFI/BOOT/
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine/BOOTIA32.EFI
-            ${ISO_DIR}/EFI/BOOT/
+        ${CMAKE_SOURCE_DIR}/limine/BOOTIA32.EFI
+        ${ISO_DIR}/EFI/BOOT/
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine/limine-bios-cd.bin
-            ${ISO_DIR}/
+        ${CMAKE_SOURCE_DIR}/limine/limine-bios-cd.bin
+        ${ISO_DIR}/
 
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/limine/limine-uefi-cd.bin
-            ${ISO_DIR}/
+        ${CMAKE_SOURCE_DIR}/limine/limine-uefi-cd.bin
+        ${ISO_DIR}/
 
     COMMAND xorriso
         -as mkisofs
@@ -110,28 +119,32 @@ find_program(QEMU_EXECUTABLE qemu-system-x86_64)
 
 if(QEMU_EXECUTABLE)
 
-add_custom_target(run
+    add_custom_target(run
 
-    COMMAND
-        ${QEMU_EXECUTABLE}
-        -cdrom ${CMAKE_BINARY_DIR}/Citadel.iso
-        -m 512M
-        -serial stdio
+        COMMAND
+            ${QEMU_EXECUTABLE}
+            -cdrom ${CMAKE_BINARY_DIR}/Citadel.iso
+            -m 512M
+            -serial stdio
 
-    DEPENDS iso
+        DEPENDS iso
 
-)
+        USES_TERMINAL
+    )
+
+    add_custom_target(debug
+
+        COMMAND
+            ${QEMU_EXECUTABLE}
+            -cdrom ${CMAKE_BINARY_DIR}/Citadel.iso
+            -m 512M
+            -serial stdio
+            -s
+            -S
+
+        DEPENDS iso
+
+        USES_TERMINAL
+    )
 
 endif()
-
-add_custom_target(debug
-
-    COMMAND
-        ${QEMU_EXECUTABLE}
-        -cdrom ${CMAKE_BINARY_DIR}/Citadel.iso
-        -m 512M
-        -s
-        -S
-
-    DEPENDS iso
-)
