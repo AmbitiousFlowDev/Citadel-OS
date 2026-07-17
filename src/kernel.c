@@ -7,14 +7,10 @@ void kernel_main(void)
 {
 
     tty_init();
-
     keyboard_init();
-
     filesystem_init();
-
     tty_writeln("Booting Citadel OS...");
     tty_writeln("");
-
     shell_run();
 
     while (1)
