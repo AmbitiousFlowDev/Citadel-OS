@@ -5,18 +5,19 @@
 
 void kernel_main(void)
 {
-
     tty_init();
     keyboard_init();
     filesystem_init();
-    tty_writeln("Booting Citadel OS...");
+
+    tty_writeln("======================================");
+    tty_writeln("        Citadel Operating System");
+    tty_writeln("======================================");
     tty_writeln("");
+
     shell_run();
 
-    while (1)
+    for (;;)
     {
-        __asm__ volatile(
-            "cli\n"
-            "hlt");
+        __asm__ volatile("hlt");
     }
 }
