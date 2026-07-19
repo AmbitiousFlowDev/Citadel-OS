@@ -1,1 +1,0 @@
-cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_ASM_NASM_COMPILER=nasm

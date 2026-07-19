@@ -16,7 +16,7 @@
 #include <time.h>
 
 #ifndef LIMINE_NO_BIOS
-#include "limine-bios-hdd.h"
+#include "limine/limine-bios-hdd.h"
 #endif
 
 static char *program_name = NULL;
